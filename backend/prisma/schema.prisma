@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// One of the 5 macro phases: Reconstruction, Base, Build, Peak, Taper
+model Phase {
+  id          Int    @id @default(autoincrement())
+  order       Int    @unique // 1-5
+  name        String
+  startWeek   Int
+  endWeek     Int
+  description String
+  weeks       Week[]
+}
+
+model Week {
+  id          Int       @id @default(autoincrement())
+  weekNumber  Int       @unique // 1-21
+  startDate   DateTime
+  endDate     DateTime
+  phaseId     Int
+  phase       Phase     @relation(fields: [phaseId], references: [id])
+  runMileage  Float?
+  bikeMileage Float?
+  swimYards   Int?
+  focus       String? // short blurb on the week's emphasis
+  sessions    Session[]
+}
+
+// A single planned session: RUN | BIKE | SWIM | LIFT
+model Session {
+  id          Int         @id @default(autoincrement())
+  weekId      Int
+  week        Week        @relation(fields: [weekId], references: [id])
+  date        DateTime
+  dayOfWeek   Int // 0=Sun ... 6=Sat
+  discipline  String // RUN | BIKE | SWIM | LIFT
+  title       String
+  description String // human readable full prescription
+  details     String? // JSON-encoded structured breakdown (sets/paces/power/reps)
+  durationMin Int?
+  distanceMi  Float?
+  order       Int         @default(0)
+  completion  Completion?
+}
+
+model Completion {
+  id          Int       @id @default(autoincrement())
+  sessionId   Int       @unique
+  session     Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  notes       String?
+}
+
+// FTP tests, swim time trials, run time trials logged over the block
+model FitnessTest {
+  id    Int      @id @default(autoincrement())
+  type  String // FTP | SWIM_TT | RUN_5K | RUN_TT | MARATHON
+  date  DateTime
+  value Float // watts, seconds, or pace in seconds/unit depending on `unit`
+  unit  String // "watts" | "sec_per_100y" | "sec" | "min_per_mi"
+  notes String?
+}
+
+model ScheduleProfile {
+  id        Int       @id @default(autoincrement())
+  name      String // "School Year" | "Summer/Break"
+  active    Boolean   @default(false) // manual override; auto-detect uses date range below when set
+  startDate DateTime? // when this profile auto-applies from
+  endDate   DateTime? // when this profile auto-applies until
+  blocks    String // JSON-encoded array of {day, start, end, label}
+}
+
+model GearItem {
+  id       Int     @id @default(autoincrement())
+  category String // Swim | Bike | Run | Nutrition | Morning-Of | Bags/Docs
+  name     String
+  packed   Boolean @default(false)
+  notes    String?
+  order    Int     @default(0)
+}
+
+model RaceProfile {
+  id            Int      @id @default(autoincrement())
+  raceName      String
+  raceDate      DateTime
+  location      String
+  bibNumber     String?
+  swimDistance  String?
+  bikeDistance  String?
+  runDistance   String?
+  courseNotes   String?
+  splitGoals    String? // JSON-encoded {swim,t1,bike,t2,run,total}
+  nutritionPlan String? // race-day fueling/sodium strategy
+}
+
+model RaceMorningEvent {
+  id     Int     @id @default(autoincrement())
+  time   String // "4:00 AM"
+  label  String
+  detail String?
+  order  Int     @default(0)
+  done   Boolean @default(false)
+}
