@@ -33,3 +33,9 @@ export function localTodayAsUTCDate() {
   const now = new Date();
   return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
 }
+
+export function greeting(name) {
+  const hour = new Date().getHours();
+  const part = hour < 5 ? "night" : hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
+  return `Good ${part}, ${name}`;
+}

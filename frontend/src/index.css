@@ -7,10 +7,13 @@
   --color-lift: #a78bfa;
   --color-race: #f43f5e;
 
-  --color-surface: #12131a;
-  --color-surface-2: #1a1c26;
-  --color-surface-3: #232532;
-  --color-border: #2c2e3a;
+  --color-bat: #ffc72c;
+  --color-bat-dim: #7a6119;
+
+  --color-surface: #060607;
+  --color-surface-2: #0e0f12;
+  --color-surface-3: #17181d;
+  --color-border: #2a2b30;
 }
 
 html {
@@ -27,6 +30,25 @@ body {
 
 #root {
   min-height: 100svh;
+}
+
+.bat-spotlight {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.bat-spotlight::before {
+  content: "";
+  position: absolute;
+  top: -40%;
+  left: 50%;
+  width: 140%;
+  height: 100%;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(255, 199, 44, 0.1), transparent 70%);
 }
 
 @media print {

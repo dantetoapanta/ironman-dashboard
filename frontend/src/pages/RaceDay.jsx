@@ -31,7 +31,7 @@ function RaceProfileCard({ profile, onSave }) {
         <div>
           <h2 className="text-lg font-bold text-white">{profile.raceName}</h2>
           <p className="text-sm text-gray-400">{profile.location} · {fmtUTC(profile.raceDate, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
-          <p className="text-xs text-run font-semibold mt-1">{calendarDaysUntil(profile.raceDate)} days to go</p>
+          <p className="text-xs text-bat font-semibold mt-1">{calendarDaysUntil(profile.raceDate)} days to go</p>
         </div>
         <button onClick={() => setEditing((e) => !e)} className="text-xs text-gray-400 hover:text-white no-print">
           {editing ? "Cancel" : "Edit"}
@@ -119,7 +119,7 @@ function RaceProfileCard({ profile, onSave }) {
               onChange={(e) => setForm({ ...form, courseNotes: e.target.value })}
             />
           </div>
-          <button onClick={save} className="bg-run text-black font-semibold text-sm rounded-lg px-4 py-1.5">
+          <button onClick={save} className="bg-bat text-black font-semibold text-sm rounded-lg px-4 py-1.5">
             Save
           </button>
         </div>
@@ -136,7 +136,7 @@ function MorningTimeline({ events, onToggle }) {
         {events.map((e) => (
           <label key={e.id} className={`flex items-start gap-3 py-1.5 px-1 rounded-lg cursor-pointer ${e.done ? "opacity-50" : ""}`}>
             <input type="checkbox" checked={e.done} onChange={() => onToggle(e)} className="mt-1" />
-            <div className="min-w-16 text-xs font-bold text-run">{e.time}</div>
+            <div className="min-w-16 text-xs font-bold text-bat">{e.time}</div>
             <div>
               <div className={`text-sm text-white ${e.done ? "line-through" : ""}`}>{e.label}</div>
               {e.detail && <div className="text-xs text-gray-500">{e.detail}</div>}
@@ -203,7 +203,7 @@ function GearChecklist({ items, onToggle, onAdd, onDelete }) {
           placeholder="Add item..."
           className="flex-1 bg-surface-3 border border-border rounded-lg px-2 py-1.5 text-xs text-white"
         />
-        <button className="bg-run text-black font-semibold text-xs rounded-lg px-3 py-1.5">Add</button>
+        <button className="bg-bat text-black font-semibold text-xs rounded-lg px-3 py-1.5">Add</button>
       </form>
     </div>
   );

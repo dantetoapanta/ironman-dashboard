@@ -38,10 +38,10 @@ function ProfileEditor({ profile, isActive, onSave }) {
   }
 
   return (
-    <div className={`rounded-xl border p-4 space-y-3 ${isActive ? "border-run bg-run/5" : "border-border bg-surface-2"}`}>
+    <div className={`rounded-xl border p-4 space-y-3 ${isActive ? "border-bat bg-bat/5" : "border-border bg-surface-2"}`}>
       <div className="flex items-center justify-between">
         <h2 className="font-semibold text-white">{form.name}</h2>
-        {isActive && <span className="text-[10px] font-bold uppercase tracking-wider bg-run text-black rounded-full px-2 py-0.5">Active Now</span>}
+        {isActive && <span className="text-[10px] font-bold uppercase tracking-wider bg-bat text-black rounded-full px-2 py-0.5">Active Now</span>}
       </div>
 
       <div className="grid grid-cols-2 gap-2">
@@ -106,7 +106,7 @@ function ProfileEditor({ profile, isActive, onSave }) {
       </div>
 
       {dirty && (
-        <button onClick={save} className="bg-run text-black font-semibold text-sm rounded-lg px-4 py-1.5">
+        <button onClick={save} className="bg-bat text-black font-semibold text-sm rounded-lg px-4 py-1.5">
           Save Changes
         </button>
       )}

@@ -74,11 +74,11 @@ export default function Timeline() {
         </div>
         {/* Today marker */}
         <div
-          className="absolute top-0 bottom-0 w-0.5 bg-white"
+          className="absolute top-0 bottom-0 w-0.5 bg-bat shadow-[0_0_8px_rgba(255,199,44,0.8)]"
           style={{ left: `${todayPct}%` }}
           title="Today"
         >
-          <div className="absolute -top-6 -translate-x-1/2 text-[10px] font-bold text-white bg-black/70 px-1.5 py-0.5 rounded whitespace-nowrap">
+          <div className="absolute -top-6 -translate-x-1/2 text-[10px] font-bold text-black bg-bat px-1.5 py-0.5 rounded whitespace-nowrap">
             TODAY
           </div>
         </div>

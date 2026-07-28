@@ -98,7 +98,7 @@ export default function FitnessTests() {
           onChange={(e) => setForm({ ...form, notes: e.target.value })}
           className="col-span-2 sm:col-span-1 bg-surface-3 border border-border rounded-lg px-2 py-1.5 text-sm text-white"
         />
-        <button type="submit" className="bg-run text-black font-semibold text-sm rounded-lg px-3 py-1.5 hover:brightness-110">
+        <button type="submit" className="bg-bat text-black font-semibold text-sm rounded-lg px-3 py-1.5 hover:brightness-110">
           Log Test
         </button>
       </form>
@@ -123,7 +123,7 @@ export default function FitnessTests() {
               <XAxis dataKey="date" stroke="#6b7280" fontSize={11} />
               <YAxis stroke="#6b7280" fontSize={11} domain={["auto", "auto"]} />
               <Tooltip contentStyle={{ background: "#1a1c26", border: "1px solid #2c2e3a", fontSize: 12 }} />
-              <Line type="monotone" dataKey="value" stroke="#f97316" strokeWidth={2} dot={{ r: 4 }} />
+              <Line type="monotone" dataKey="value" stroke="#ffc72c" strokeWidth={2} dot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
