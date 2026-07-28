@@ -1,14 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --color-run: #f97316;
-  --color-bike: #38bdf8;
-  --color-swim: #22d3ee;
-  --color-lift: #a78bfa;
-  --color-race: #f43f5e;
+  --color-run: #ef4444;
+  --color-bike: #3b82f6;
+  --color-swim: #f8fafc;
+  --color-lift: #1e3a8a;
+  --color-race: #dc2626;
 
-  --color-bat: #ffc72c;
-  --color-bat-dim: #7a6119;
+  --color-usa-red: #ef4444;
+  --color-usa-blue: #3b82f6;
+  --color-usa-white: #f8fafc;
 
   --color-surface: #060607;
   --color-surface-2: #0e0f12;
@@ -32,7 +33,7 @@ body {
   min-height: 100svh;
 }
 
-.bat-spotlight {
+.hero-glow {
   pointer-events: none;
   position: absolute;
   inset: 0;
@@ -40,15 +41,24 @@ body {
   z-index: 0;
 }
 
-.bat-spotlight::before {
+.hero-glow::before {
   content: "";
   position: absolute;
   top: -40%;
-  left: 50%;
-  width: 140%;
+  left: 15%;
+  width: 90%;
   height: 100%;
-  transform: translateX(-50%);
-  background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(255, 199, 44, 0.1), transparent 70%);
+  background: radial-gradient(ellipse 55% 50% at 50% 0%, rgba(59, 130, 246, 0.14), transparent 70%);
+}
+
+.hero-glow::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: 15%;
+  width: 90%;
+  height: 100%;
+  background: radial-gradient(ellipse 55% 50% at 50% 0%, rgba(239, 68, 68, 0.14), transparent 70%);
 }
 
 @media print {

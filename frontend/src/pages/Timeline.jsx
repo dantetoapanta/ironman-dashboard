@@ -4,11 +4,11 @@ import { getPhases } from "../api/client";
 import { fmtUTC, localTodayAsUTCDate } from "../lib/date";
 
 const PHASE_COLORS = {
-  Reconstruction: "#a78bfa",
-  Base: "#38bdf8",
-  Build: "#f97316",
-  Peak: "#f43f5e",
-  Taper: "#22c55e",
+  Reconstruction: "#93c5fd",
+  Base: "#3b82f6",
+  Taper: "#f8fafc",
+  Build: "#ef4444",
+  Peak: "#b91c1c",
 };
 
 export default function Timeline() {
@@ -74,11 +74,11 @@ export default function Timeline() {
         </div>
         {/* Today marker */}
         <div
-          className="absolute top-0 bottom-0 w-0.5 bg-bat shadow-[0_0_8px_rgba(255,199,44,0.8)]"
+          className="absolute top-0 bottom-0 w-0.5 bg-usa-red shadow-[0_0_8px_rgba(239,68,68,0.8)]"
           style={{ left: `${todayPct}%` }}
           title="Today"
         >
-          <div className="absolute -top-6 -translate-x-1/2 text-[10px] font-bold text-black bg-bat px-1.5 py-0.5 rounded whitespace-nowrap">
+          <div className="absolute -top-6 -translate-x-1/2 text-[10px] font-bold text-white bg-usa-red px-1.5 py-0.5 rounded whitespace-nowrap">
             TODAY
           </div>
         </div>
