@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { getCurrentWeek, getTodaySessions, getWeather } from "../api/client";
+import { getCurrentWeek, getTodaySessions, getWeather, getDailyMetrics } from "../api/client";
 import SessionCard from "../components/SessionCard";
 import PrintButton from "../components/PrintButton";
 import { localTodayKey, greeting } from "../lib/date";
+import { recoveryColor, latestWithField } from "../lib/wearables";
 
 const ATHLETE_NAME = "Dante";
 
@@ -44,6 +45,34 @@ function weatherIcon(code) {
   if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return "🌧️";
   if ([95, 96, 99].includes(code)) return "⛈️";
   return "🌡️";
+}
+
+function RecoveryBadge() {
+  const [metric, setMetric] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const end = new Date().toISOString().slice(0, 10);
+    const start = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+    getDailyMetrics(start, end)
+      .then((metrics) => setMetric(latestWithField(metrics, "whoopRecoveryScore")))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading || !metric) return null;
+  const color = recoveryColor(metric.whoopRecoveryScore);
+
+  return (
+    <div className={`flex items-center gap-2 rounded-xl border border-border px-3 py-2 ${color.bg}`}>
+      <div className={`text-lg font-bold ${color.text}`}>{Math.round(metric.whoopRecoveryScore)}%</div>
+      <div className="text-xs text-gray-400 leading-tight">
+        Whoop
+        <br />
+        Recovery
+      </div>
+    </div>
+  );
 }
 
 function WeatherStrip() {
@@ -120,11 +149,14 @@ export default function Dashboard() {
           </div>
           {week.focus && <p className="text-sm text-gray-400 mt-1 max-w-xl">{week.focus}</p>}
         </div>
-        <div className="flex items-center gap-3 bg-surface-2 border border-usa-blue/25 rounded-xl px-4 py-2">
-          <ComplianceRing pct={week.completionPct} />
-          <div className="text-xs text-gray-400">
-            <div className="text-white font-semibold">{week.completedCount}/{week.totalCount}</div>
-            sessions this week
+        <div className="flex items-center gap-2">
+          <RecoveryBadge />
+          <div className="flex items-center gap-3 bg-surface-2 border border-usa-blue/25 rounded-xl px-4 py-2">
+            <ComplianceRing pct={week.completionPct} />
+            <div className="text-xs text-gray-400">
+              <div className="text-white font-semibold">{week.completedCount}/{week.totalCount}</div>
+              sessions this week
+            </div>
           </div>
         </div>
       </div>

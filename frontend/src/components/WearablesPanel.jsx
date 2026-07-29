@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   getWhoopStatus,
   syncWhoop,
@@ -145,6 +146,31 @@ function GarminCard({ onChange }) {
   );
 }
 
+function RecoveryTrendChart({ metrics }) {
+  const recent = metrics.filter((m) => m.whoopRecoveryScore != null).slice(-7);
+  if (recent.length < 2) return null;
+
+  const chartData = recent.map((m) => ({
+    date: fmtUTC(m.date, { month: "short", day: "numeric" }),
+    recovery: m.whoopRecoveryScore,
+  }));
+
+  return (
+    <div className="bg-surface-2 border border-border rounded-xl p-4 h-56">
+      <h3 className="font-semibold text-white text-sm mb-2">7-Day Recovery Trend</h3>
+      <ResponsiveContainer width="100%" height="85%">
+        <LineChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#2c2e3a" />
+          <XAxis dataKey="date" stroke="#6b7280" fontSize={11} />
+          <YAxis stroke="#6b7280" fontSize={11} domain={[0, 100]} />
+          <Tooltip contentStyle={{ background: "#1a1c26", border: "1px solid #2c2e3a", fontSize: 12 }} />
+          <Line type="monotone" dataKey="recovery" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 function MetricsTable({ metrics }) {
   if (metrics.length === 0) {
     return <div className="text-sm text-gray-500">No wearable data yet — connect Whoop or import a Garmin CSV above.</div>;
@@ -216,6 +242,7 @@ export default function WearablesPanel() {
         <GarminCard onChange={refresh} />
       </div>
 
+      {!loading && <RecoveryTrendChart metrics={metrics} />}
       {!loading && <MetricsTable metrics={metrics} />}
     </div>
   );
