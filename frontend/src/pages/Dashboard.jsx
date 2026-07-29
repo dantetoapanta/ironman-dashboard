@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { getCurrentWeek, getTodaySessions, getWeather, getDailyMetrics } from "../api/client";
+import { getCurrentWeek, getTodaySessions, getHomeWeather, getDailyMetrics } from "../api/client";
 import SessionCard from "../components/SessionCard";
 import PrintButton from "../components/PrintButton";
+import ReadinessBoard from "../components/ReadinessBoard";
+import RecommendationsList from "../components/RecommendationsList";
+import WeatherBoard from "../components/WeatherBoard";
 import { localTodayKey, greeting } from "../lib/date";
-import { recoveryColor, latestWithField } from "../lib/wearables";
 
 const ATHLETE_NAME = "Dante";
 
@@ -37,67 +39,14 @@ function ComplianceRing({ pct }) {
   );
 }
 
-function weatherIcon(code) {
-  if (code === 0) return "☀️";
-  if ([1, 2].includes(code)) return "🌤️";
-  if (code === 3) return "☁️";
-  if ([45, 48].includes(code)) return "🌫️";
-  if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return "🌧️";
-  if ([95, 96, 99].includes(code)) return "⛈️";
-  return "🌡️";
-}
-
-function RecoveryBadge() {
-  const [metric, setMetric] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const end = new Date().toISOString().slice(0, 10);
-    const start = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
-    getDailyMetrics(start, end)
-      .then((metrics) => setMetric(latestWithField(metrics, "whoopRecoveryScore")))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading || !metric) return null;
-  const color = recoveryColor(metric.whoopRecoveryScore);
-
-  return (
-    <div className={`flex items-center gap-2 rounded-xl border border-border px-3 py-2 ${color.bg}`}>
-      <div className={`text-lg font-bold ${color.text}`}>{Math.round(metric.whoopRecoveryScore)}%</div>
-      <div className="text-xs text-gray-400 leading-tight">
-        Whoop
-        <br />
-        Recovery
-      </div>
-    </div>
-  );
-}
-
-function WeatherStrip() {
-  const [tampa, setTampa] = useState(null);
-  useEffect(() => {
-    getWeather("tampa").then(setTampa).catch(() => {});
-  }, []);
-  if (!tampa?.current) return null;
-  return (
-    <div className="flex items-center gap-2 text-xs text-gray-400 bg-surface-2 border border-border rounded-lg px-3 py-2">
-      <span>{weatherIcon(tampa.current.weather_code)}</span>
-      <span className="text-white font-medium">{Math.round(tampa.current.temperature_2m)}°F</span>
-      <span>Tampa now</span>
-      <span className="text-gray-600">·</span>
-      <span>Feels {Math.round(tampa.current.apparent_temperature)}°F</span>
-      <span className="text-gray-600">·</span>
-      <span>{tampa.current.relative_humidity_2m}% humidity</span>
-    </div>
-  );
-}
-
 export default function Dashboard() {
   const [week, setWeek] = useState(null);
   const [todaySessions, setTodaySessions] = useState([]);
+  const [metrics, setMetrics] = useState([]);
+  const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [metricsLoading, setMetricsLoading] = useState(true);
+  const [weatherLoading, setWeatherLoading] = useState(true);
   const [view, setView] = useState("today");
 
   useEffect(() => {
@@ -107,6 +56,18 @@ export default function Dashboard() {
         setTodaySessions(t);
       })
       .finally(() => setLoading(false));
+
+    const end = new Date().toISOString().slice(0, 10);
+    const start = new Date(Date.now() - 13 * 86400000).toISOString().slice(0, 10);
+    getDailyMetrics(start, end)
+      .then(setMetrics)
+      .catch(() => {})
+      .finally(() => setMetricsLoading(false));
+
+    getHomeWeather()
+      .then(setWeather)
+      .catch(() => {})
+      .finally(() => setWeatherLoading(false));
   }, []);
 
   function handleSessionChange(sessionId, completion) {
@@ -149,65 +110,75 @@ export default function Dashboard() {
           </div>
           {week.focus && <p className="text-sm text-gray-400 mt-1 max-w-xl">{week.focus}</p>}
         </div>
-        <div className="flex items-center gap-2">
-          <RecoveryBadge />
-          <div className="flex items-center gap-3 bg-surface-2 border border-usa-blue/25 rounded-xl px-4 py-2">
-            <ComplianceRing pct={week.completionPct} />
-            <div className="text-xs text-gray-400">
-              <div className="text-white font-semibold">{week.completedCount}/{week.totalCount}</div>
-              sessions this week
-            </div>
+        <div className="flex items-center gap-3 bg-surface-2 border border-usa-blue/25 rounded-xl px-4 py-2">
+          <ComplianceRing pct={week.completionPct} />
+          <div className="text-xs text-gray-400">
+            <div className="text-white font-semibold">{week.completedCount}/{week.totalCount}</div>
+            sessions this week
           </div>
         </div>
       </div>
 
-      <WeatherStrip />
+      <div className="grid gap-4 lg:grid-cols-3 items-start">
+        {/* Board 1: Today's Training — dominant */}
+        <div className="lg:col-span-2 space-y-4">
+          <ReadinessBoard metrics={metrics} loading={metricsLoading} />
 
-      <div className="flex items-center justify-between gap-2 no-print">
-        <div className="flex gap-1 bg-surface-2 border border-border rounded-lg p-1 w-fit">
-          <button
-            onClick={() => setView("today")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md ${view === "today" ? "bg-surface-3 text-white" : "text-gray-500"}`}
-          >
-            Today
-          </button>
-          <button
-            onClick={() => setView("week")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md ${view === "week" ? "bg-surface-3 text-white" : "text-gray-500"}`}
-          >
-            This Week
-          </button>
-        </div>
-        {view === "week" && <PrintButton label="Print This Week" />}
-      </div>
+          <div className="flex items-center justify-between gap-2 no-print">
+            <div className="flex gap-1 bg-surface-2 border border-border rounded-lg p-1 w-fit">
+              <button
+                onClick={() => setView("today")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md ${view === "today" ? "bg-surface-3 text-white" : "text-gray-500"}`}
+              >
+                Today
+              </button>
+              <button
+                onClick={() => setView("week")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md ${view === "week" ? "bg-surface-3 text-white" : "text-gray-500"}`}
+              >
+                This Week
+              </button>
+            </div>
+            {view === "week" && <PrintButton label="Print This Week" />}
+          </div>
 
-      {view === "today" ? (
-        <div className="space-y-2">
-          {todaySessions.length === 0 && <div className="text-sm text-gray-500">No sessions scheduled today. Rest up.</div>}
-          {todaySessions.map((s) => (
-            <SessionCard key={s.id} session={s} onChange={handleSessionChange} />
-          ))}
-        </div>
-      ) : (
-        <div id="print-week" className="space-y-4">
-          {byDay.map(([dateKey, sessions]) => {
-            const d = new Date(dateKey + "T00:00:00Z");
-            const isToday = dateKey === todayKey;
-            return (
-              <div key={dateKey}>
-                <div className={`text-xs font-bold uppercase tracking-wider mb-1.5 ${isToday ? "text-white" : "text-gray-500"}`}>
-                  {DAY_NAMES[d.getUTCDay()]} {d.getUTCMonth() + 1}/{d.getUTCDate()} {isToday && "· Today"}
-                </div>
-                <div className="space-y-2">
-                  {sessions.map((s) => (
-                    <SessionCard key={s.id} session={s} onChange={handleSessionChange} compact />
-                  ))}
-                </div>
+          {view === "today" ? (
+            <>
+              <div className="space-y-2">
+                {todaySessions.length === 0 && <div className="text-sm text-gray-500">No sessions scheduled today. Rest up.</div>}
+                {todaySessions.map((s) => (
+                  <SessionCard key={s.id} session={s} onChange={handleSessionChange} />
+                ))}
               </div>
-            );
-          })}
+              {!weatherLoading && todaySessions.length > 0 && <RecommendationsList sessions={todaySessions} weather={weather} />}
+            </>
+          ) : (
+            <div id="print-week" className="space-y-4">
+              {byDay.map(([dateKey, sessions]) => {
+                const d = new Date(dateKey + "T00:00:00Z");
+                const isToday = dateKey === todayKey;
+                return (
+                  <div key={dateKey}>
+                    <div className={`text-xs font-bold uppercase tracking-wider mb-1.5 ${isToday ? "text-white" : "text-gray-500"}`}>
+                      {DAY_NAMES[d.getUTCDay()]} {d.getUTCMonth() + 1}/{d.getUTCDate()} {isToday && "· Today"}
+                    </div>
+                    <div className="space-y-2">
+                      {sessions.map((s) => (
+                        <SessionCard key={s.id} session={s} onChange={handleSessionChange} compact />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Board 2: Weather */}
+        <div className="lg:col-span-1 lg:sticky lg:top-20">
+          <WeatherBoard weather={weather} loading={weatherLoading} />
+        </div>
+      </div>
     </div>
   );
 }

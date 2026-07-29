@@ -15,3 +15,17 @@ export function latestWithField(metrics, field) {
   }
   return null;
 }
+
+// Same thresholds as recoveryColor (67+/34-66/<34) — adjust both together if tuning.
+export function readinessBanner(score) {
+  if (score == null) {
+    return { level: "unknown", bg: "bg-surface-3", border: "border-border", text: "text-gray-400", message: "Recovery not synced yet today." };
+  }
+  if (score >= 67) {
+    return { level: "green", bg: "bg-green-500/10", border: "border-green-500/40", text: "text-green-400", message: "Green light — go as planned." };
+  }
+  if (score >= 34) {
+    return { level: "amber", bg: "bg-yellow-500/10", border: "border-yellow-500/40", text: "text-yellow-400", message: "Amber — consider trimming intensity today." };
+  }
+  return { level: "red", bg: "bg-red-500/10", border: "border-red-500/40", text: "text-red-400", message: "Red — consider an easy day or swapping to rest." };
+}

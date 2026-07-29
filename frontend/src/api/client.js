@@ -22,6 +22,7 @@ export const getActiveScheduleProfile = () => api.get("/schedule-profiles/active
 export const updateScheduleProfile = (id, data) => api.patch(`/schedule-profiles/${id}`, data).then((r) => r.data);
 
 export const getWeather = (location) => api.get(`/weather/${location}`).then((r) => r.data);
+export const getHomeWeather = () => api.get("/weather/home").then((r) => r.data);
 
 export const getGear = () => api.get("/gear").then((r) => r.data);
 export const addGear = (data) => api.post("/gear", data).then((r) => r.data);
