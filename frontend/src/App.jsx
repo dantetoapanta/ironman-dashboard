@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
+import Home from "./pages/Home";
 import Timeline from "./pages/Timeline";
 import FitnessTests from "./pages/FitnessTests";
 import RaceDay from "./pages/RaceDay";
@@ -14,6 +15,7 @@ function App() {
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Dashboard />} />
+          <Route path="home" element={<Home />} />
           <Route path="timeline" element={<Timeline />} />
           <Route path="fitness" element={<FitnessTests />} />
           <Route path="race-day" element={<RaceDay />} />
