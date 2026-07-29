@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { getFitnessTests, createFitnessTest, deleteFitnessTest } from "../api/client";
 import { fmtUTC } from "../lib/date";
+import WearablesPanel from "../components/WearablesPanel";
 
 const TEST_TYPES = [
   { value: "FTP", label: "Bike FTP", unit: "watts" },
@@ -141,6 +142,10 @@ export default function FitnessTests() {
             <button onClick={() => handleDelete(t.id)} className="text-gray-500 hover:text-red-400 text-xs">Delete</button>
           </div>
         ))}
+      </div>
+
+      <div className="border-t border-border pt-5">
+        <WearablesPanel />
       </div>
     </div>
   );

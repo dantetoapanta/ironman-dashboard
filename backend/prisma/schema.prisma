@@ -108,3 +108,38 @@ model RaceMorningEvent {
   order  Int     @default(0)
   done   Boolean @default(false)
 }
+
+// OAuth connection to a wearable provider (currently just Whoop)
+model WearableConnection {
+  id             Int      @id @default(autoincrement())
+  provider       String   @unique // "WHOOP"
+  accessToken    String
+  refreshToken   String
+  tokenExpiresAt DateTime
+  connectedAt    DateTime @default(now())
+  lastSyncedAt   DateTime?
+}
+
+// One row per calendar day, merging whatever wearable data is available.
+// Whoop fields populate via live OAuth sync; Garmin fields populate via
+// manual CSV import since Garmin has no accessible personal-use API.
+model DailyMetric {
+  id                 Int      @id @default(autoincrement())
+  date               DateTime @unique
+
+  whoopRecoveryScore Float?
+  whoopHrvMilli      Float?
+  whoopRestingHr     Float?
+  whoopSleepScore    Float?
+  whoopSleepHours    Float?
+  whoopStrain        Float?
+
+  garminSteps        Int?
+  garminRestingHr    Float?
+  garminBodyBattery  Float?
+  garminTrainingLoad Float?
+  garminSleepHours   Float?
+  garminCalories     Float?
+
+  updatedAt          DateTime @updatedAt
+}

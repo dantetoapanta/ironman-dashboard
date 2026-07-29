@@ -15,12 +15,13 @@ const scheduleProfilesRouter = require("./routes/scheduleProfiles");
 const weatherRouter = require("./routes/weather");
 const gearRouter = require("./routes/gear");
 const raceRouter = require("./routes/race");
+const integrationsRouter = require("./routes/integrations");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "2mb" }));
 
 app.use("/api/weeks", weeksRouter);
 app.use("/api/sessions", sessionsRouter);
@@ -30,6 +31,7 @@ app.use("/api/schedule-profiles", scheduleProfilesRouter);
 app.use("/api/weather", weatherRouter);
 app.use("/api/gear", gearRouter);
 app.use("/api/race", raceRouter);
+app.use("/api/integrations", integrationsRouter);
 
 app.get("/api/health", (req, res) => res.json({ ok: true }));
 

@@ -33,4 +33,11 @@ export const updateRaceProfile = (data) => api.patch("/race/profile", data).then
 export const getRaceMorning = () => api.get("/race/morning").then((r) => r.data);
 export const updateRaceMorningEvent = (id, data) => api.patch(`/race/morning/${id}`, data).then((r) => r.data);
 
+export const getWhoopStatus = () => api.get("/integrations/whoop/status").then((r) => r.data);
+export const syncWhoop = () => api.post("/integrations/whoop/sync").then((r) => r.data);
+export const disconnectWhoop = () => api.delete("/integrations/whoop/disconnect");
+export const importGarminCsv = (csv) => api.post("/integrations/garmin/import", { csv }).then((r) => r.data);
+export const getDailyMetrics = (start, end) =>
+  api.get("/integrations/metrics", { params: { start, end } }).then((r) => r.data);
+
 export default api;
