@@ -59,8 +59,8 @@ export default function Home() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3 items-start">
-        {/* Main column: today's workouts + recommendations */}
-        <div className="lg:col-span-2 space-y-4">
+        {/* Main column: today's workouts + recommendations, then trends right below — no lg:row-span so it flows tight regardless of sidebar height */}
+        <div className="lg:col-span-2 lg:row-start-1 space-y-4">
           <h2 className="text-sm font-semibold text-white uppercase tracking-wider">Today's Training</h2>
           {loading ? (
             <div className="text-sm text-gray-500">Loading today's plan...</div>
@@ -75,17 +75,17 @@ export default function Home() {
           )}
         </div>
 
-        {/* Sidebar: readiness, weather, whoop activities */}
-        <div className="lg:col-span-1 space-y-4">
+        {/* Sidebar: readiness, weather, whoop activities — spans both rows independently so its height doesn't push the main column down */}
+        <div className="lg:col-span-1 lg:row-start-1 lg:row-span-2 space-y-4">
           <ReadinessBanner metrics={metrics} loading={metricsLoading} />
           <WeatherBoard weather={weather} loading={weatherLoading} />
           <WhoopWorkoutsWidget />
         </div>
-      </div>
 
-      <div>
-        <h2 className="text-sm font-semibold text-white uppercase tracking-wider mb-2">Readiness Trends</h2>
-        <ReadinessCharts metrics={metrics} loading={metricsLoading} />
+        <div className="lg:col-span-2 lg:row-start-2">
+          <h2 className="text-sm font-semibold text-white uppercase tracking-wider mb-2">Readiness Trends</h2>
+          <ReadinessCharts metrics={metrics} loading={metricsLoading} />
+        </div>
       </div>
     </div>
   );
