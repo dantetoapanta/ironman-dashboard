@@ -143,3 +143,20 @@ model DailyMetric {
 
   updatedAt          DateTime @updatedAt
 }
+
+// Individual logged Whoop workouts/activities (distinct from the daily
+// recovery/sleep/strain rollup in DailyMetric) — synced via /whoop/sync.
+model WhoopWorkout {
+  id            Int      @id @default(autoincrement())
+  whoopId       String   @unique
+  sportName     String?
+  start         DateTime
+  end           DateTime
+  durationMin   Int?
+  strain        Float?
+  avgHr         Float?
+  maxHr         Float?
+  kilojoule     Float?
+  distanceMeter Float?
+  createdAt     DateTime @default(now())
+}

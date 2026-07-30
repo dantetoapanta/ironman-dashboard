@@ -94,6 +94,17 @@ router.post("/whoop/sync", async (req, res) => {
       whoop.getSleeps(accessToken, { start, limit: 25 }),
       whoop.getCycles(accessToken, { start, limit: 25 }),
     ]);
+    // Workouts need the read:workout scope, added after some users already
+    // connected — don't let a missing-scope 401 break the rest of the sync.
+    // If this happens, reconnect Whoop (disconnect + Connect Whoop again) to
+    // re-authorize with the new scope.
+    let workouts = { records: [] };
+    let workoutScopeError = null;
+    try {
+      workouts = await whoop.getWorkouts(accessToken, { start, limit: 25 });
+    } catch (err) {
+      workoutScopeError = err.message;
+    }
 
     const byDate = new Map();
     const touch = (ts) => {
@@ -134,12 +145,51 @@ router.post("/whoop/sync", async (req, res) => {
       count++;
     }
 
+    let workoutCount = 0;
+    for (const w of workouts.records || []) {
+      if (w.score_state !== "SCORED" || !w.id || !w.start || !w.end) continue;
+      const durationMin = Math.round((new Date(w.end) - new Date(w.start)) / 60000);
+      await prisma.whoopWorkout.upsert({
+        where: { whoopId: w.id },
+        update: {
+          sportName: w.sport_name ?? null,
+          start: new Date(w.start),
+          end: new Date(w.end),
+          durationMin,
+          strain: w.score?.strain ?? null,
+          avgHr: w.score?.average_heart_rate ?? null,
+          maxHr: w.score?.max_heart_rate ?? null,
+          kilojoule: w.score?.kilojoule ?? null,
+          distanceMeter: w.score?.distance_meter ?? null,
+        },
+        create: {
+          whoopId: w.id,
+          sportName: w.sport_name ?? null,
+          start: new Date(w.start),
+          end: new Date(w.end),
+          durationMin,
+          strain: w.score?.strain ?? null,
+          avgHr: w.score?.average_heart_rate ?? null,
+          maxHr: w.score?.max_heart_rate ?? null,
+          kilojoule: w.score?.kilojoule ?? null,
+          distanceMeter: w.score?.distance_meter ?? null,
+        },
+      });
+      workoutCount++;
+    }
+
     await prisma.wearableConnection.update({
       where: { provider: "WHOOP" },
       data: { lastSyncedAt: new Date() },
     });
 
-    res.json({ synced: count });
+    res.json({
+      synced: count,
+      workoutsSynced: workoutCount,
+      workoutScopeError: workoutScopeError
+        ? "Workouts didn't sync — reconnect Whoop (Disconnect, then Connect again) to grant the newer workout-read permission."
+        : null,
+    });
   } catch (err) {
     res.status(502).json({ error: "Whoop sync failed", detail: err.message });
   }
@@ -196,6 +246,15 @@ router.post("/garmin/import", async (req, res) => {
   }
 
   res.json({ imported: count, errors });
+});
+
+router.get("/whoop/workouts", async (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 10, 50);
+  const workouts = await prisma.whoopWorkout.findMany({
+    orderBy: { start: "desc" },
+    take: limit,
+  });
+  res.json(workouts);
 });
 
 router.get("/metrics", async (req, res) => {

@@ -40,5 +40,7 @@ export const disconnectWhoop = () => api.delete("/integrations/whoop/disconnect"
 export const importGarminCsv = (csv) => api.post("/integrations/garmin/import", { csv }).then((r) => r.data);
 export const getDailyMetrics = (start, end) =>
   api.get("/integrations/metrics", { params: { start, end } }).then((r) => r.data);
+export const getWhoopWorkouts = (limit) =>
+  api.get("/integrations/whoop/workouts", { params: { limit } }).then((r) => r.data);
 
 export default api;

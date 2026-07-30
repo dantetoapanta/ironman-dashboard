@@ -14,8 +14,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="home" element={<Home />} />
+          <Route index element={<Home />} />
+          <Route path="today" element={<Dashboard />} />
           <Route path="timeline" element={<Timeline />} />
           <Route path="fitness" element={<FitnessTests />} />
           <Route path="race-day" element={<RaceDay />} />

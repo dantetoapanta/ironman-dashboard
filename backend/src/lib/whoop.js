@@ -2,7 +2,7 @@ const AUTH_URL = "https://api.prod.whoop.com/oauth/oauth2/auth";
 const TOKEN_URL = "https://api.prod.whoop.com/oauth/oauth2/token";
 const API_BASE = "https://api.prod.whoop.com/developer";
 
-const SCOPES = ["read:recovery", "read:sleep", "read:cycles", "read:profile", "offline"].join(" ");
+const SCOPES = ["read:recovery", "read:sleep", "read:cycles", "read:workout", "read:profile", "offline"].join(" ");
 
 function config() {
   return {
@@ -82,6 +82,9 @@ function getSleeps(accessToken, params) {
 function getCycles(accessToken, params) {
   return apiGet(accessToken, "/v2/cycle", params);
 }
+function getWorkouts(accessToken, params) {
+  return apiGet(accessToken, "/v2/activity/workout", params);
+}
 
 module.exports = {
   isConfigured,
@@ -91,4 +94,5 @@ module.exports = {
   getRecoveries,
   getSleeps,
   getCycles,
+  getWorkouts,
 };

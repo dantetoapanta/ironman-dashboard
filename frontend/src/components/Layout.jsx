@@ -2,8 +2,8 @@ import { NavLink, Outlet } from "react-router-dom";
 import StarIcon from "./StarIcon";
 
 const NAV_ITEMS = [
-  { to: "/", label: "Today", icon: "📋", end: true },
-  { to: "/home", label: "Home", icon: "🏠" },
+  { to: "/", label: "Home", icon: "🏠", end: true },
+  { to: "/today", label: "Today", icon: "📋" },
   { to: "/timeline", label: "Timeline", icon: "📈" },
   { to: "/fitness", label: "Fitness", icon: "📊" },
   { to: "/race-day", label: "Race Day", icon: "🏁" },
