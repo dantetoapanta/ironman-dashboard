@@ -38,13 +38,15 @@ export default function ReadinessCharts({ metrics, loading }) {
     recovery: m.whoopRecoveryScore,
     strain: m.whoopStrain != null ? Math.round(m.whoopStrain * 10) / 10 : null,
     hrv: m.whoopHrvMilli != null ? Math.round(m.whoopHrvMilli) : null,
+    sleep: m.whoopSleepScore,
   }));
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2">
       <TrendChart title="Recovery" data={trendData} dataKey="recovery" color="#22c55e" unit="%" domain={[0, 100]} />
       <TrendChart title="Strain" data={trendData} dataKey="strain" color="#3b82f6" domain={[0, 21]} />
       <TrendChart title="HRV" data={trendData} dataKey="hrv" color="#e5e7eb" unit="ms" domain={["auto", "auto"]} />
+      <TrendChart title="Sleep Score" data={trendData} dataKey="sleep" color="#a78bfa" unit="%" domain={[0, 100]} />
     </div>
   );
 }
