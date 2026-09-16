@@ -6,6 +6,7 @@ import ReadinessCharts from "../components/ReadinessCharts";
 import RecommendationsList from "../components/RecommendationsList";
 import WeatherBoard from "../components/WeatherBoard";
 import WhoopWorkoutsWidget from "../components/WhoopWorkoutsWidget";
+import WorkoutScheduleWidget from "../components/WorkoutScheduleWidget";
 import { greeting } from "../lib/date";
 
 const ATHLETE_NAME = "Dante";
@@ -66,6 +67,7 @@ export default function Home() {
             <div className="text-sm text-gray-500">Loading today's plan...</div>
           ) : (
             <div className="space-y-2">
+              {todaySessions.length > 0 && <WorkoutScheduleWidget sessions={todaySessions} />}
               {todaySessions.length === 0 && <div className="text-sm text-gray-500">No sessions scheduled today. Rest up.</div>}
               {todaySessions.map((s) => (
                 <SessionCard key={s.id} session={s} onChange={handleSessionChange} />

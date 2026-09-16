@@ -1,11 +1,16 @@
 // Estimates session duration in minutes when the plan only stores distance
 // (long runs/rides), using the pace assumptions baked into the seeded plan.
-function estimateDurationMin(session) {
+// Swim sets are measured in yards (not distanceMi) and some lift entries
+// omit duration entirely, so fall back to flat discipline defaults rather
+// than leaving the session unplaceable on a schedule.
+export function estimateDurationMin(session) {
   if (session.durationMin) return session.durationMin;
-  if (!session.distanceMi) return null;
-  const paceMinPerMi = { RUN: 7.9, BIKE: 3.2, SWIM: null, LIFT: null }[session.discipline];
-  if (!paceMinPerMi) return null;
-  return Math.round(session.distanceMi * paceMinPerMi);
+  if (session.distanceMi) {
+    const paceMinPerMi = { RUN: 7.9, BIKE: 3.2 }[session.discipline];
+    if (paceMinPerMi) return Math.round(session.distanceMi * paceMinPerMi);
+  }
+  const FALLBACK_MIN = { SWIM: 50, LIFT: 55, RUN: 40, BIKE: 60 };
+  return FALLBACK_MIN[session.discipline] ?? 45;
 }
 
 // Sodium/fluid targets anchored to the 500-700mg/hr rate that fixed the
