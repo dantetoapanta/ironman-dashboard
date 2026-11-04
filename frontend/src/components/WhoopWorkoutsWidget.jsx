@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { getWhoopWorkouts } from "../api/client";
-import { fmtUTC } from "../lib/date";
 
 const SPORT_ICON = {
   running: "🏃",
@@ -62,7 +61,7 @@ export default function WhoopWorkoutsWidget() {
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-white">{sportLabel(w.sportName)}</div>
                 <div className="text-[11px] text-gray-500">
-                  {fmtUTC(w.start, { month: "short", day: "numeric" })} · {w.durationMin}min
+                  {new Date(w.start).toLocaleDateString("en-US", { month: "short", day: "numeric" })} · {w.durationMin}min
                   {w.avgHr != null ? ` · ${Math.round(w.avgHr)} avg HR` : ""}
                   {w.kilojoule != null ? ` · ${Math.round(w.kilojoule * 0.239)} cal` : ""}
                 </div>

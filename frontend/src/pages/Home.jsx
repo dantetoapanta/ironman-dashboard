@@ -6,6 +6,7 @@ import ReadinessCharts from "../components/ReadinessCharts";
 import RecommendationsList from "../components/RecommendationsList";
 import WeatherBoard from "../components/WeatherBoard";
 import WhoopWorkoutsWidget from "../components/WhoopWorkoutsWidget";
+import GarminActivitiesWidget from "../components/GarminActivitiesWidget";
 import WorkoutScheduleWidget from "../components/WorkoutScheduleWidget";
 import { greeting } from "../lib/date";
 
@@ -59,7 +60,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3 items-start">
+      <div className="grid gap-4 lg:grid-cols-3 lg:grid-rows-[auto_1fr] items-start">
         {/* Main column: today's workouts + recommendations, then trends right below — no lg:row-span so it flows tight regardless of sidebar height */}
         <div className="lg:col-span-2 lg:row-start-1 space-y-4">
           <h2 className="text-sm font-semibold text-white uppercase tracking-wider">Today's Training</h2>
@@ -77,11 +78,12 @@ export default function Home() {
           )}
         </div>
 
-        {/* Sidebar: readiness, weather, whoop activities — spans both rows independently so its height doesn't push the main column down */}
+        {/* Sidebar: readiness, weather, whoop + garmin activities — spans both rows; row 2 is 1fr so any extra sidebar height lands below the trends, never between the sections */}
         <div className="lg:col-span-1 lg:row-start-1 lg:row-span-2 space-y-4">
           <ReadinessBanner metrics={metrics} loading={metricsLoading} />
           <WeatherBoard weather={weather} loading={weatherLoading} />
           <WhoopWorkoutsWidget />
+          <GarminActivitiesWidget />
         </div>
 
         <div className="lg:col-span-2 lg:row-start-2">

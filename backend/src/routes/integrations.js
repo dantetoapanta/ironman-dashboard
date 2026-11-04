@@ -2,8 +2,8 @@ const crypto = require("crypto");
 const express = require("express");
 const prisma = require("../lib/prisma");
 const whoop = require("../lib/whoop");
-const { toLocalDateKey } = require("../lib/dates");
-const { parseCsv } = require("../lib/csv");
+const garmin = require("../lib/garmin");
+const { toLocalDateKey, todayUTCMidnight } = require("../lib/dates");
 
 const router = express.Router();
 
@@ -195,57 +195,134 @@ router.post("/whoop/sync", async (req, res) => {
   }
 });
 
-// Garmin has no accessible personal-use API, so stats come from a manual CSV
-// import instead of live sync. Expected headers (any subset is fine):
-// date,steps,resting_hr,body_battery,training_load,sleep_hours,calories
-router.post("/garmin/import", async (req, res) => {
-  const { csv } = req.body;
-  if (!csv || typeof csv !== "string") return res.status(400).json({ error: "csv (string) is required in the request body" });
+// ---------------------------------------------------------------------------
+// Garmin (Personal API key — no OAuth redirect; the key lives in an env var)
+// ---------------------------------------------------------------------------
 
-  const rows = parseCsv(csv);
-  if (rows.length === 0) return res.status(400).json({ error: "No data rows found in CSV" });
+// Garmin uses -1/-2 style sentinels for "no data" on some metrics.
+const valid = (v) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : undefined);
+const round1 = (v) => (v === undefined ? undefined : Math.round(v * 10) / 10);
+const dateKey = (calendarDate) => new Date(`${calendarDate}T00:00:00.000Z`);
 
-  const FIELD_MAP = {
-    steps: "garminSteps",
-    resting_hr: "garminRestingHr",
-    body_battery: "garminBodyBattery",
-    training_load: "garminTrainingLoad",
-    sleep_hours: "garminSleepHours",
-    calories: "garminCalories",
-  };
+router.get("/garmin/status", async (req, res) => {
+  const conn = await prisma.wearableConnection.findUnique({ where: { provider: "GARMIN" } });
+  res.json({ configured: garmin.isConfigured(), lastSyncedAt: conn?.lastSyncedAt || null });
+});
 
-  let count = 0;
-  const errors = [];
-  for (const row of rows) {
-    if (!row.date) {
-      errors.push("Row missing 'date' column");
-      continue;
+router.post("/garmin/sync", async (req, res) => {
+  if (!garmin.isConfigured()) return res.status(400).json({ error: "Garmin is not configured (GARMIN_PERSONAL_API_KEY is not set)" });
+
+  const days = Math.min(Math.max(Number(req.query.days) || 30, 1), 180);
+  const endDate = todayUTCMidnight().toISOString().slice(0, 10);
+  const startDate = new Date(todayUTCMidnight().getTime() - days * 86400000).toISOString().slice(0, 10);
+
+  try {
+    const [daily, sleeps, hrvs, activities] = await Promise.all([
+      garmin.getDailySummaries(startDate, endDate),
+      garmin.getSleepSummaries(startDate, endDate),
+      garmin.getHrvSummaries(startDate, endDate),
+      garmin.getActivities(startDate, endDate),
+    ]);
+
+    // One DailyMetric row per calendar day; only set fields Garmin actually returned
+    // so a missing value never wipes out something we already have.
+    const byDate = new Map();
+    const bucket = (calendarDate) => {
+      if (!byDate.has(calendarDate)) byDate.set(calendarDate, {});
+      return byDate.get(calendarDate);
+    };
+
+    for (const d of daily) {
+      const b = bucket(d.calendarDate);
+      b.garminSteps = valid(d.movement?.steps?.value);
+      b.garminRestingHr = valid(d.heartRate?.restingValue);
+      b.garminBodyBattery = valid(d.bodyBattery?.maxValue);
+      b.garminStress = valid(d.stress?.avgLevel);
+      b.garminCalories = valid(d.calories?.burnedTotal);
     }
-    const parsedDate = new Date(row.date);
-    if (Number.isNaN(parsedDate.getTime())) {
-      errors.push(`Unparseable date: "${row.date}"`);
-      continue;
+    for (const s of sleeps) {
+      const b = bucket(s.calendarDate);
+      const sleepSec = valid(s.sleepTimeSeconds);
+      b.garminSleepHours = sleepSec ? round1(sleepSec / 3600) : undefined;
+      b.garminSleepScore = valid(s.sleepScores?.overall?.value);
     }
-    const date = new Date(Date.UTC(parsedDate.getUTCFullYear(), parsedDate.getUTCMonth(), parsedDate.getUTCDate()));
-
-    const fields = {};
-    for (const [csvKey, dbKey] of Object.entries(FIELD_MAP)) {
-      if (row[csvKey] !== undefined && row[csvKey] !== "") {
-        const num = Number(row[csvKey]);
-        if (!Number.isNaN(num)) fields[dbKey] = num;
-      }
+    for (const h of hrvs) {
+      bucket(h.calendarDate).garminHrv = valid(h.lastNightAvg);
     }
-    if (Object.keys(fields).length === 0) continue;
 
-    await prisma.dailyMetric.upsert({
-      where: { date },
-      update: fields,
-      create: { date, ...fields },
+    // Daily training load = sum of that day's per-activity loads (by the watch's local date).
+    const loadByDate = new Map();
+    for (const a of activities) {
+      const load = valid(a.activityTrainingLoad);
+      if (!load || !a.startTimeLocal) continue;
+      const day = a.startTimeLocal.slice(0, 10);
+      loadByDate.set(day, (loadByDate.get(day) || 0) + load);
+    }
+    for (const [day, load] of loadByDate) bucket(day).garminTrainingLoad = Math.round(load);
+
+    let metricCount = 0;
+    for (const [calendarDate, raw] of byDate) {
+      const fields = Object.fromEntries(Object.entries(raw).filter(([, v]) => v !== undefined));
+      if (Object.keys(fields).length === 0) continue;
+      const date = dateKey(calendarDate);
+      await prisma.dailyMetric.upsert({ where: { date }, update: fields, create: { date, ...fields } });
+      metricCount++;
+    }
+
+    let activityCount = 0;
+    for (const a of activities) {
+      if (!a.activityId || !a.startTimeGMT) continue;
+      const fields = {
+        name: a.activityName ?? null,
+        typeKey: a.activityType?.typeKey ?? null,
+        start: new Date(`${a.startTimeGMT.replace(" ", "T")}Z`),
+        startLocal: a.startTimeLocal ?? null,
+        durationSec: a.duration ?? null,
+        distanceMeter: a.distance ?? null,
+        avgHr: a.averageHR ?? null,
+        maxHr: a.maxHR ?? null,
+        calories: a.calories ?? null,
+        trainingLoad: a.activityTrainingLoad ?? null,
+        aerobicEffect: a.aerobicTrainingEffect ?? null,
+        anaerobicEffect: a.anaerobicTrainingEffect ?? null,
+        avgPower: a.avgPower ?? null,
+        elevationGainM: a.elevationGain ?? null,
+      };
+      await prisma.garminActivity.upsert({
+        where: { garminId: String(a.activityId) },
+        update: fields,
+        create: { garminId: String(a.activityId), ...fields },
+      });
+      activityCount++;
+    }
+
+    // API-key provider: no OAuth tokens to store, this row only tracks sync time.
+    await prisma.wearableConnection.upsert({
+      where: { provider: "GARMIN" },
+      update: { lastSyncedAt: new Date() },
+      create: { provider: "GARMIN", accessToken: "n/a", refreshToken: "n/a", tokenExpiresAt: new Date(), lastSyncedAt: new Date() },
     });
-    count++;
-  }
 
-  res.json({ imported: count, errors });
+    res.json({ synced: metricCount, activitiesSynced: activityCount, days });
+  } catch (err) {
+    const status = err instanceof garmin.GarminKeyError ? 401 : 502;
+    res.status(status).json({ error: err instanceof garmin.GarminKeyError ? err.message : "Garmin sync failed", detail: err.message });
+  }
+});
+
+router.get("/garmin/activities", async (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 10, 50);
+  const recent = await prisma.garminActivity.findMany({ orderBy: { start: "desc" }, take: limit * 2 });
+
+  // The Kickr/trainer apps record a second "virtual ride" alongside the watch's
+  // indoor cycling activity. Drop an activity with no training load when
+  // another one with a load started within 5 minutes — it's the same workout.
+  const deduped = recent.filter(
+    (a) =>
+      a.trainingLoad != null ||
+      !recent.some((b) => b.id !== a.id && b.trainingLoad != null && Math.abs(b.start - a.start) <= 5 * 60 * 1000)
+  );
+  res.json(deduped.slice(0, limit));
 });
 
 router.get("/whoop/workouts", async (req, res) => {

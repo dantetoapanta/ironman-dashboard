@@ -140,8 +140,34 @@ model DailyMetric {
   garminTrainingLoad Float?
   garminSleepHours   Float?
   garminCalories     Float?
+  garminHrv          Float?
+  garminStress       Float?
+  garminSleepScore   Float?
 
   updatedAt          DateTime @updatedAt
+}
+
+// Individual Garmin activities (watch-recorded runs, rides, swims, lifts) —
+// synced via /garmin/sync. startLocal is the wall-clock time Garmin recorded,
+// kept as a string so the displayed date never shifts with timezones.
+model GarminActivity {
+  id              Int      @id @default(autoincrement())
+  garminId        String   @unique
+  name            String?
+  typeKey         String?
+  start           DateTime
+  startLocal      String?
+  durationSec     Float?
+  distanceMeter   Float?
+  avgHr           Float?
+  maxHr           Float?
+  calories        Float?
+  trainingLoad    Float?
+  aerobicEffect   Float?
+  anaerobicEffect Float?
+  avgPower        Float?
+  elevationGainM  Float?
+  createdAt       DateTime @default(now())
 }
 
 // Individual logged Whoop workouts/activities (distinct from the daily

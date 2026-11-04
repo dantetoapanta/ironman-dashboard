@@ -47,6 +47,7 @@ Backend (`backend/.env` — see `.env.example`):
 | `PORT` | Server port (default `4000`) |
 | `APP_TZ` | Timezone used to resolve "today" server-side (default `America/New_York`) |
 | `WHOOP_CLIENT_ID` / `WHOOP_CLIENT_SECRET` / `WHOOP_REDIRECT_URI` | Whoop OAuth app credentials (optional — see Wearables below) |
+| `GARMIN_PERSONAL_API_KEY` | Garmin Personal API key (optional — see Wearables below) |
 
 `APP_TZ` matters because week/session boundaries are calendar days — it should match where you actually train, not the server's default timezone, so "today's session" flips over at local midnight rather than UTC midnight.
 
@@ -64,13 +65,15 @@ Whoop has a self-serve developer API:
 4. Redeploy/restart, then click "Connect Whoop" on the Fitness page and authorize.
 5. Click "Sync Now" to pull the last 30 days of recovery, sleep, and strain data. Tokens auto-refresh; sync again anytime for new data.
 
-### Garmin (manual import)
+### Garmin (personal API key)
 
-Garmin's official Health API is gated behind a business/enterprise agreement with licensing fees — not accessible for a personal project, and this app deliberately does **not** store your raw Garmin password to fake a login (insecure and against their terms). Instead:
+Garmin's Personal API (free, read-only, your own data) works with a key instead of an OAuth login:
 
-1. Click "Download template" on the Garmin card for the expected CSV shape (`date,steps,resting_hr,body_battery,training_load,sleep_hours,calories`).
-2. Fill in what you have — any subset of columns works, pull the numbers from the Garmin Connect app/site.
-3. Click "Upload CSV" to import. Re-importing a date overwrites that date's Garmin fields (Whoop fields are untouched).
+1. On [Garmin Connect](https://connect.garmin.com/app/settings/personalApiToken), click Create Key, accept the terms, pick an expiry (30 days to 1 year), and copy the key — it's only shown once.
+2. Set it as `GARMIN_PERSONAL_API_KEY` (locally in `backend/.env`, in production via Railway's Variables tab) and redeploy/restart.
+3. Click "Sync Now" on the Garmin card (Fitness page). It pulls the last 30 days of steps, resting HR, Body Battery, stress, HRV, sleep, calories and activities; training load is each day's activities' loads summed. For a longer backfill, `POST /api/integrations/garmin/sync?days=110` (max 180).
+
+The key is exchanged for a 24-hour access token automatically (no refresh token — it just re-exchanges the key). When the key expires (Garmin emails a week ahead), generate a new one and update the env var; sync will say so if Garmin rejects it. Deleting the key on Garmin Connect revokes access immediately.
 
 ## Deploying to Railway
 
