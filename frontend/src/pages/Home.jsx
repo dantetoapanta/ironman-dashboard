@@ -3,6 +3,7 @@ import { getCurrentWeek, getTodaySessions, getDailyMetrics, getHomeWeather } fro
 import SessionCard from "../components/SessionCard";
 import ReadinessBanner from "../components/ReadinessBanner";
 import ReadinessCharts from "../components/ReadinessCharts";
+import Vo2MaxGauge from "../components/Vo2MaxGauge";
 import RecommendationsList from "../components/RecommendationsList";
 import WeatherBoard from "../components/WeatherBoard";
 import WhoopWorkoutsWidget from "../components/WhoopWorkoutsWidget";
@@ -16,6 +17,7 @@ export default function Home() {
   const [week, setWeek] = useState(null);
   const [todaySessions, setTodaySessions] = useState([]);
   const [metrics, setMetrics] = useState([]);
+  const [vo2Metrics, setVo2Metrics] = useState([]);
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   const [metricsLoading, setMetricsLoading] = useState(true);
@@ -35,6 +37,12 @@ export default function Home() {
       .then(setMetrics)
       .catch(() => {})
       .finally(() => setMetricsLoading(false));
+
+    // VO2 max moves slowly, so it gets a longer window than the 2-week readiness charts.
+    const vo2Start = new Date(Date.now() - 119 * 86400000).toISOString().slice(0, 10);
+    getDailyMetrics(vo2Start, end)
+      .then((rows) => setVo2Metrics(rows.filter((r) => r.garminVo2Max != null)))
+      .catch(() => {});
 
     getHomeWeather()
       .then(setWeather)
@@ -81,6 +89,7 @@ export default function Home() {
         {/* Sidebar: readiness, weather, whoop + garmin activities — spans both rows; row 2 is 1fr so any extra sidebar height lands below the trends, never between the sections */}
         <div className="lg:col-span-1 lg:row-start-1 lg:row-span-2 space-y-4">
           <ReadinessBanner metrics={metrics} loading={metricsLoading} />
+          <Vo2MaxGauge rows={vo2Metrics} loading={metricsLoading} />
           <WeatherBoard weather={weather} loading={weatherLoading} />
           <WhoopWorkoutsWidget />
           <GarminActivitiesWidget />
