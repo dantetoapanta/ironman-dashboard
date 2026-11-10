@@ -48,6 +48,7 @@ Backend (`backend/.env` — see `.env.example`):
 | `APP_TZ` | Timezone used to resolve "today" server-side (default `America/New_York`) |
 | `WHOOP_CLIENT_ID` / `WHOOP_CLIENT_SECRET` / `WHOOP_REDIRECT_URI` | Whoop OAuth app credentials (optional — see Wearables below) |
 | `GARMIN_PERSONAL_API_KEY` | Garmin Personal API key (optional — see Wearables below) |
+| `AUTO_SYNC_MINUTES` | How often to auto-sync Whoop + Garmin. Defaults to `15` on Railway and `0` (off) elsewhere; `0` disables |
 
 `APP_TZ` matters because week/session boundaries are calendar days — it should match where you actually train, not the server's default timezone, so "today's session" flips over at local midnight rather than UTC midnight.
 
@@ -74,6 +75,12 @@ Garmin's Personal API (free, read-only, your own data) works with a key instead 
 3. Click "Sync Now" on the Garmin card (Fitness page). It pulls the last 30 days of steps, resting HR, Body Battery, stress, HRV, sleep, calories and activities; training load is each day's activities' loads summed. For a longer backfill, `POST /api/integrations/garmin/sync?days=110` (max 180).
 
 The key is exchanged for a 24-hour access token automatically (no refresh token — it just re-exchanges the key). When the key expires (Garmin emails a week ahead), generate a new one and update the env var; sync will say so if Garmin rejects it. Deleting the key on Garmin Connect revokes access immediately.
+
+### Automatic sync
+
+The server syncs Whoop and Garmin by itself every 15 minutes (set `AUTO_SYNC_MINUTES` to change it, `0` to turn it off). It runs inside the backend process, so there is no separate cron service. The first run 30 seconds after a (re)deploy catches up on the last 30 days of Garmin data; later runs refresh just the last 3 days. Runs are serialized per provider, so a manual **Sync Now** and a scheduled run never overlap (Whoop refresh tokens are single-use). Providers that aren't connected are skipped, and each run logs one `[auto-sync]` line.
+
+It is on by default only on Railway: a local dev server shares the production database, and two processes refreshing Whoop's single-use token could break the connection. If a scheduled run fails (for example an expired Garmin key), the card on the Fitness page shows the reason.
 
 ## Deploying to Railway
 

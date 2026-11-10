@@ -10,6 +10,15 @@ import {
 } from "../api/client";
 import { fmtUTC } from "../lib/date";
 
+function fmtSynced(ts) {
+  return new Date(ts).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+function SyncError({ message }) {
+  if (!message) return null;
+  return <p className="text-xs text-red-400 mt-2">Last auto-sync failed: {message}</p>;
+}
+
 function WhoopCard({ status, onChange }) {
   const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState(null);
@@ -61,7 +70,7 @@ function WhoopCard({ status, onChange }) {
       {status.connected ? (
         <>
           <p className="text-xs text-gray-500 mt-1">
-            {status.lastSyncedAt ? `Last synced ${fmtUTC(status.lastSyncedAt, { month: "short", day: "numeric" })}` : "Never synced"}
+            {status.lastSyncedAt ? `Last synced ${fmtSynced(status.lastSyncedAt)}` : "Never synced"}
           </p>
           <div className="flex gap-2 mt-3">
             <button
@@ -76,6 +85,7 @@ function WhoopCard({ status, onChange }) {
             </button>
           </div>
           {message && <p className="text-xs text-gray-400 mt-2">{message}</p>}
+          <SyncError message={status.lastError} />
         </>
       ) : (
         <a
@@ -129,9 +139,7 @@ function GarminCard({ status, onChange }) {
         <span className="text-[10px] font-bold uppercase tracking-wider bg-usa-blue text-white rounded-full px-2 py-0.5">Connected</span>
       </div>
       <p className="text-xs text-gray-500 mt-1">
-        {status.lastSyncedAt
-          ? `Last synced ${new Date(status.lastSyncedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`
-          : "Never synced"}
+        {status.lastSyncedAt ? `Last synced ${fmtSynced(status.lastSyncedAt)}` : "Never synced"}
       </p>
       <div className="flex gap-2 mt-3">
         <button
@@ -143,6 +151,7 @@ function GarminCard({ status, onChange }) {
         </button>
       </div>
       {message && <p className="text-xs text-gray-400 mt-2">{message}</p>}
+      <SyncError message={status.lastError} />
     </div>
   );
 }
@@ -243,7 +252,7 @@ export default function WearablesPanel() {
     <div className="space-y-4">
       <div>
         <h2 className="text-lg font-bold text-white">Wearables</h2>
-        <p className="text-sm text-gray-400 mt-1">Recovery, sleep, and strain from Whoop; steps, body battery, stress, and training load from Garmin. Table shows the last 30 days.</p>
+        <p className="text-sm text-gray-400 mt-1">Recovery, sleep, and strain from Whoop; steps, body battery, stress, and training load from Garmin. Both sync automatically every 15 minutes; Sync Now forces one. Table shows the last 30 days.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

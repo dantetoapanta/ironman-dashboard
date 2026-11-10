@@ -16,6 +16,7 @@ const weatherRouter = require("./routes/weather");
 const gearRouter = require("./routes/gear");
 const raceRouter = require("./routes/race");
 const integrationsRouter = require("./routes/integrations");
+const { startAutoSync } = require("./lib/autoSync");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -44,4 +45,10 @@ app.get(/^(?!\/api).*/, (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
+
+  // Pull fresh Whoop/Garmin data on a timer. On by default only on Railway so a
+  // local dev server (sharing the production DB) doesn't also refresh Whoop's
+  // single-use tokens; set AUTO_SYNC_MINUTES to override anywhere (0 = off).
+  const defaultMinutes = process.env.RAILWAY_ENVIRONMENT ? 15 : 0;
+  startAutoSync(Number(process.env.AUTO_SYNC_MINUTES ?? defaultMinutes));
 });
